@@ -21,9 +21,10 @@ class Plotting:
         fig = plt.figure(figsize=(10, 10))
         fig.suptitle(header, fontsize=14, fontweight='bold')
         ax = fig.add_subplot()
+        no_of_vehicles = len(data.vehicles) if data.vehicles else len(clusters)
         ax.set_title(f"Number of nodes: "
                      f"{len(data.nodes) - len(data.unassigned_pickups)- len(data.unassigned_deliveries) - 1} "
-                     f"Number of vehicles: {len(data.vehicles)}")
+                     f"Number of vehicles: {no_of_vehicles}")
         ax.plot(data.depot.location.lon, data.depot.location.lat, color='green', marker='H')
         ax.annotate('DEPOT', (data.depot.location.lon, data.depot.location.lat), color='red')
         colors = ['red', 'green', 'yellow', 'orange', 'purple', 'brown', 'gray', 'olive', 'cyan']

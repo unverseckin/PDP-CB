@@ -87,13 +87,16 @@ class Clustering:
         return clusters, nodes_sorted_by_polar_angle
 
     @staticmethod
-    def finalize_clusters(clusters: dict[int, Cluster], nodes: list[Node], benefits: dict, n_n: bool) -> list[Node]:
+    def finalize_clusters(clusters: dict[int, Cluster], nodes: list[Node], benefits: dict, use_n_n: bool,
+                          use_polar_angle: bool) -> list[Node]:
         """Finalize the clusters
 
         Args:
             clusters (dict[int, Cluster]): The dictionary of clusters
             nodes (list[Node]): The list of nodes
             benefits (dict): The dictionary of benefits
+            use_n_n (bool): The nearest neighbor flag
+            use_polar_angle (bool): The polar angle flag
 
         Returns:
              list[Node]: The list of unassigned nodes
@@ -102,7 +105,7 @@ class Clustering:
         nodes_sorted_by_demand = Sorting.get_sorted_nodes_by_descending_demand(nodes=deepcopy(nodes))
 
         for node in nodes_sorted_by_demand:
-            if n_n:
+            if use_n_n:
                 sorted_benefits = Sorting.get_sorted_clusters_by_ascending_benefit_distances(
                     benefit=benefits["node_ids"][node.id])
             else:
@@ -113,10 +116,13 @@ class Clustering:
                 cluster = clusters[benefit.cluster_no]
 
                 if cluster.remaining_capacity >= node.demand:
-                    """if cluster.seed_node.polar_angle > node.polar_angle:
-                        cluster.nodes.insert(0, node)
-                    else:"""
-                    cluster.nodes.append(node)
+                    if use_polar_angle:
+                        if cluster.seed_node.polar_angle > node.polar_angle:
+                            cluster.nodes.insert(0, node)
+                        else:
+                            cluster.nodes.append(node)
+                    else:
+                        cluster.nodes.append(node)
                     cluster.remaining_capacity -= node.demand
                     cluster.total_demand += node.demand
                     assigned_nodes.append(node)
@@ -126,13 +132,15 @@ class Clustering:
         return unassigned_nodes
 
     @staticmethod
-    def add_pickups_to_clusters(clusters: dict[int, Cluster], nodes: list[Node], benefits: dict, n_n: bool) -> list[Node]:
+    def add_pickups_to_clusters(clusters: dict[int, Cluster], nodes: list[Node], benefits: dict, use_n_n: bool) -> list[
+        Node]:
         """Add pickups to the clusters
 
         Args:
             clusters (dict[int, Cluster]): The dictionary of clusters
             nodes (list[Node]): The list of nodes
             benefits (dict): The dictionary of benefits
+            use_n_n (bool): The nearest neighbor flag
 
         Returns:
              list[Node]: The list of unassigned nodes
@@ -141,7 +149,7 @@ class Clustering:
         node_benefits_list = []
 
         for node, benefit in zip(nodes, benefits["node_ids"].values()):
-            if n_n:
+            if use_n_n:
                 sorted_benefits = Sorting.get_sorted_clusters_by_ascending_benefit_distances(benefit=benefit)
             else:
                 sorted_benefits = Sorting.get_sorted_clusters_by_descending_benefit_distances(benefit=benefit)

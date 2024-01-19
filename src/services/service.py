@@ -17,7 +17,8 @@ class RoutingService:
                       no_of_vehicles: int,
                       no_of_pickups: int,
                       capacity: int,
-                      n_n: bool):
+                      use_n_n: bool,
+                      use_polar_angle: bool = True) -> dict:
         """Solve the routing problem
 
         Args:
@@ -25,7 +26,8 @@ class RoutingService:
             no_of_vehicles (int): The number of vehicles
             no_of_pickups (int): The number of pickups
             capacity (int): The capacity of the vehicles
-            n_n (bool): The nearest neighbor flag
+            use_n_n (bool): The nearest neighbor flag
+            use_polar_angle (bool): The polar angle flag
 
         Returns:
             output (dict): The output with the prepared solution information
@@ -45,18 +47,17 @@ class RoutingService:
         clusters, remaining_deliveries = Clustering.initiate_clusters(nodes=data.eligible_deliveries,
                                                                       no_of_vehicles=data.no_of_vehicles,
                                                                       capacity=data.capacity)
-        if not n_n:
-            benefits = Calculations.calculate_savings(clusters=clusters,
-                                                      nodes=remaining_deliveries,
-                                                      distance_matrix=distance_matrix,
-                                                      depot=data.depot)
+
+        if use_n_n:
+            benefits = Calculations.calculate_nearest_neighbors_benefits(clusters=clusters, nodes=remaining_deliveries,
+                                                                         distance_matrix=distance_matrix)
         else:
-            benefits = Calculations.get_nearest_neighbors_in_clusters(clusters=clusters,
-                                                                      nodes=remaining_deliveries,
-                                                                      distance_matrix=distance_matrix)
+            benefits = Calculations.calculate_savings_benefits(clusters=clusters, nodes=remaining_deliveries,
+                                                               distance_matrix=distance_matrix, depot=data.depot)
 
         unassigned_deliveries = Clustering.finalize_clusters(clusters=clusters, nodes=remaining_deliveries,
-                                                             benefits=benefits, n_n=n_n)
+                                                             benefits=benefits, use_n_n=use_n_n,
+                                                             use_polar_angle=use_polar_angle)
         Plotting.plot_route(data=data, clusters=clusters, header="Initial Route(s)")
         if not unassigned_deliveries:
             empty_clusters = [cluster for cluster in clusters.values() if len(cluster.nodes) == 1]
@@ -72,18 +73,21 @@ class RoutingService:
                     temporary_remaining_deliveries = deepcopy(remaining_deliveries)
                     temporary_remaining_deliveries.append(cluster.seed_node)
                     del temporary_clusters[cluster.cluster_no]
-                    if not n_n:
-                        new_benefits = Calculations.calculate_savings(clusters=temporary_clusters,
-                                                                      nodes=temporary_remaining_deliveries,
-                                                                      distance_matrix=distance_matrix,
-                                                                      depot=data.depot)
+
+                    if use_n_n:
+                        new_benefits = Calculations.calculate_nearest_neighbors_benefits(clusters=temporary_clusters,
+                                                                                         nodes=temporary_remaining_deliveries,
+                                                                                         distance_matrix=distance_matrix)
                     else:
-                        new_benefits = Calculations.get_nearest_neighbors_in_clusters(clusters=temporary_clusters,
-                                                                                      nodes=temporary_remaining_deliveries,
-                                                                                      distance_matrix=distance_matrix)
+                        new_benefits = Calculations.calculate_savings_benefits(clusters=temporary_clusters,
+                                                                               nodes=temporary_remaining_deliveries,
+                                                                               distance_matrix=distance_matrix,
+                                                                               depot=data.depot)
+
                     new_unassigned_deliveries = Clustering.finalize_clusters(clusters=temporary_clusters,
                                                                              nodes=temporary_remaining_deliveries,
-                                                                             benefits=new_benefits, n_n=n_n)
+                                                                             benefits=new_benefits, use_n_n=use_n_n,
+                                                                             use_polar_angle=use_polar_angle)
 
                     if new_unassigned_deliveries:
                         continue
@@ -91,25 +95,23 @@ class RoutingService:
                         clusters = temporary_clusters
                         remaining_deliveries = temporary_remaining_deliveries
                         unassigned_deliveries = new_unassigned_deliveries
-        if not n_n:
-            benefits_for_pickups = Calculations.calculate_savings(clusters=clusters,
-                                                                  nodes=data.eligible_pickups,
-                                                                  distance_matrix=distance_matrix,
-                                                                  depot=data.depot)
+
+        if use_n_n:
+            benefits_for_pickups = Calculations.calculate_nearest_neighbors_benefits(clusters=clusters,
+                                                                                     nodes=data.eligible_pickups,
+                                                                                     distance_matrix=distance_matrix)
         else:
-            benefits_for_pickups = Calculations.get_nearest_neighbors_in_clusters(clusters=clusters,
-                                                                                  nodes=data.eligible_pickups,
-                                                                                  distance_matrix=distance_matrix)
+            benefits_for_pickups = Calculations.calculate_savings_benefits(clusters=clusters,
+                                                                           nodes=data.eligible_pickups,
+                                                                           distance_matrix=distance_matrix,
+                                                                           depot=data.depot)
 
         unassigned_pickups = Clustering.add_pickups_to_clusters(clusters=clusters, nodes=data.eligible_pickups,
-                                                                benefits=benefits_for_pickups, n_n=n_n)
+                                                                benefits=benefits_for_pickups, use_n_n=use_n_n)
 
         for index, cluster in enumerate(clusters.values()):
-            vehicle = Vehicle(id=index + 1,
-                              capacity=cluster.capacity,
-                              route=cluster.nodes,
-                              total_demand=cluster.total_demand,
-                              remaining_capacity=cluster.remaining_capacity)
+            vehicle = Vehicle(id=index + 1,  capacity=cluster.capacity, route=cluster.nodes,
+                              total_demand=cluster.total_demand, remaining_capacity=cluster.remaining_capacity)
             data.vehicles.append(vehicle)
             vehicle.set_route_sequence()
             vehicle.set_fulfilment_rate()
@@ -124,8 +126,8 @@ class RoutingService:
         data.unassigned_pickups = [node.id for node in unassigned_pickups]
         data.unassigned_deliveries += [node.id for node in unassigned_deliveries]
         data.set_unused_vehicles()
-        output = Output.prepare_output(data=data,
-                                       elapsed_time=elapsed_time)
+        output = Output.prepare_output(data=data, elapsed_time=elapsed_time)
         print(output)
         Plotting.plot_route(data=data, clusters=clusters, header="Final Route(s)")
+
         return output

@@ -94,11 +94,11 @@ class Calculations:
         return distance
 
     @staticmethod
-    def calculate_savings(clusters: dict[int, Cluster],
-                          nodes: list[Node],
-                          distance_matrix: np.ndarray,
-                          depot: Node) -> dict[str, dict]:
-        """Calculate the savings for each node
+    def calculate_savings_benefits(clusters: dict[int, Cluster],
+                                   nodes: list[Node],
+                                   distance_matrix: np.ndarray,
+                                   depot: Node) -> dict[str, dict]:
+        """Calculate the Savings benefits for each node
 
          Args:
             clusters (dict[int, Cluster]): The dictionary of clusters
@@ -122,10 +122,10 @@ class Calculations:
         return savings
 
     @staticmethod
-    def get_nearest_neighbors_in_clusters(clusters: dict[int, Cluster],
-                                          nodes: list[Node],
-                                          distance_matrix: np.ndarray) -> dict[str, dict]:
-        """Get the nearest neighbors for each node
+    def calculate_nearest_neighbors_benefits(clusters: dict[int, Cluster],
+                                             nodes: list[Node],
+                                             distance_matrix: np.ndarray) -> dict[str, dict]:
+        """Calculate the nearest neighbors benefits for each node
 
         Args:
             clusters (dict[int, Cluster]): The dictionary of clusters
