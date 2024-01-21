@@ -15,7 +15,7 @@ def main():
         capacity = input("Vehicle capacity: ")
         use_n_n = input("Enter True for Nearest Neighbor or False for Savings: ")
         use_polar_angle = input("Use polar angle ? (True/False): ")
-        output = RoutingService.solve_routing(Instance.instances[instance],
+        output = RoutingService.solve_routing(instance=Instance.instances[int(instance)],
                                               no_of_vehicles=int(no_of_vehicles),
                                               no_of_pickups=int(no_of_pickups),
                                               capacity=int(capacity),

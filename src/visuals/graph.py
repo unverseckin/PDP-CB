@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+from src.models.location import Location
 from src.models.cluster import Cluster
 from src.data.data_preparation import DataPreparation
 
@@ -12,6 +13,7 @@ class Plotting:
         Args:
             data (DataPreparation): The data preparation object
             clusters (dict[int, Cluster]): The dictionary of clusters
+            header (str): The header of the plot
         """
         if data.vehicles:
             nodes_list = [vehicle.route for vehicle in data.vehicles]
@@ -38,30 +40,25 @@ class Plotting:
                 ax.plot(node.location.lon, node.location.lat, color='black', marker='.')
 
                 index = nodes.index(node)
+                color = colors[nodes_list.index(nodes) % len(colors)]
                 if index == 0:
-                    x = []
-                    y = []
-                    x.append(data.depot.location.lon)
-                    x.append(node.location.lon)
-                    y.append(data.depot.location.lat)
-                    y.append(node.location.lat)
-                    ax.plot(x, y, color=colors[nodes_list.index(nodes) % len(colors)])
-                    ax.annotate(str(node.id), (node.location.lon, node.location.lat), color='black')
-                else:
-                    x = []
-                    y = []
-                    x.append(nodes[index - 1].location.lon)
-                    x.append(node.location.lon)
-                    y.append(nodes[index - 1].location.lat)
-                    y.append(node.location.lat)
-                    ax.plot(x, y, color=colors[nodes_list.index(nodes) % len(colors)])
 
-            x = []
-            y = []
-            x.append(nodes[-1].location.lon)
-            x.append(data.depot.location.lon)
-            y.append(nodes[-1].location.lat)
-            y.append(data.depot.location.lat)
-            ax.plot(x, y, color=colors[nodes_list.index(nodes) % len(colors)])
+                    Plotting.plot_path(ax=ax, location_1=data.depot.location, location_2=node.location, color=color)
+                else:
+                    Plotting.plot_path(ax=ax, location_1=nodes[index - 1].location, location_2=node.location, color=color)
+
+            Plotting.plot_path(ax=ax, location_1=nodes[-1].location, location_2=data.depot.location, color=color)
 
         plt.show()
+
+    @staticmethod
+    def plot_path(ax: plt, location_1: Location, location_2: Location, color: str) -> None:
+        """Plot the path between two locations
+
+        Args:
+            ax (plt): The plot
+            location_1 (Location): The first location
+            location_2 (Location): The second location
+            color (str): The color of the path
+        """
+        ax.plot([location_1.lon, location_2.lon], [location_1.lat, location_2.lat], color=color)
